@@ -1,7 +1,42 @@
 #include "utils.h"
 #include <sys/time.h>
+#include <stdio.h>
+#include <unistd.h> 
 
+void print_usage(const char* cmd_name){
+  printf("Usage:\n\t%s -f [Haar cascade file] -e [ASEF eye locator file]\n", 
+    cmd_name);
+}
 
+int parse_arguments( int argc, char** argv, 
+	char** face_detector_path, char** eye_locator_path){
+
+  char c; 
+  while( (c = getopt(argc, argv, "f:e:")) != -1 ) {
+    switch(c){
+      case 'f':
+        *face_detector_path = strdup(optarg);
+        break;
+      case 'e':
+        *eye_locator_path = strdup(optarg);
+        break;
+      case '?':
+        print_usage(argv[0]);
+        return -1;
+      default:
+        print_usage(argv[0]);
+        return -1;
+    }
+  }
+
+  if ( !(*face_detector_path && *eye_locator_path )) {
+    print_usage(argv[0]);
+        return -1;
+  }
+
+  return 0;
+
+}
 
 void get_camera_properties(CvCapture * capture, int *frame_width, int *frame_height, double *fps){
   	if ( !capture ) return ;

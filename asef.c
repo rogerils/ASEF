@@ -1,4 +1,5 @@
 #include "asef.h"
+#include "fd.h"
 #include <stdio.h>
 
 #define LINE_BUF_SIZE 1024
@@ -10,17 +11,30 @@ static int load_asef_filters(const char* file_name, int *p_n_rows, int *p_n_cols
 static int read_line(FILE *fp, char *buf, int size);
 
 
-void asef_initialze(AsefEyeLocator *asef, const char *file_name){
+int asef_initialze(AsefEyeLocator *asef, const char *asef_file_name, const char *fd_file_name){
 
-  load_asef_filters(file_name, &asef->n_rows, &asef->n_cols, &asef->lrect, 
-    &asef->rrect, &asef->lfilter, &asef->rfilter);
+  if ( !asef || !asef_file_name || !fd_file_name || 
+    strlen(asef_file_name)==0 || strlen(fd_file_name)==0)
+    return -1;
 
+  // For face detection:
+  asef->face_detection_buffer = cvCreateMemStorage(0);
+  asef->face_detection_classifier = fd_load_detector( fd_file_name );
+
+  if ( !asef->face_detection_classifier )
+    return -1;
+
+  // For asef eye locator:
+
+  if ( load_asef_filters(asef_file_name, &asef->n_rows, &asef->n_cols, &asef->lrect, 
+    &asef->rrect, &asef->lfilter, &asef->rfilter) )
+    return -1;
 
   asef->lfilter_dft = cvCreateMat(asef->n_rows, asef->n_cols, CV_32FC1);
   asef->rfilter_dft = cvCreateMat(asef->n_rows, asef->n_cols, CV_32FC1);
 
-  asef->image = cvCreateMat(asef->n_rows, asef->n_cols, CV_32FC1);
-  asef->image_tile = cvCreateMat(asef->n_rows, asef->n_cols, CV_8UC1);
+  asef->scaled_face_image_32fc1 = cvCreateMat(asef->n_rows, asef->n_cols, CV_32FC1);
+  asef->scaled_face_image_8uc1 = cvCreateMat(asef->n_rows, asef->n_cols, CV_8UC1);
 
   asef->lcorr = cvCreateMat(asef->n_rows, asef->n_cols, CV_32FC1);
   asef->rcorr = cvCreateMat(asef->n_rows, asef->n_cols, CV_32FC1);
@@ -28,27 +42,41 @@ void asef_initialze(AsefEyeLocator *asef, const char *file_name){
   asef->lroi = cvCreateMatHeader(asef->n_rows, asef->n_cols, CV_32FC1);
   asef->rroi = cvCreateMatHeader(asef->n_rows, asef->n_cols, CV_32FC1);
 
+  asef->lut = cvCreateMat(256, 1, CV_32FC1);
+
+  if ( !(asef->lfilter_dft && asef->rfilter_dft && asef->scaled_face_image_32fc1 && 
+    asef->scaled_face_image_8uc1 && asef->lcorr && asef->rcorr && asef->lroi && 
+    asef->rroi && asef->lut) ){
+    return -1;
+  }
+
   cvDFT(asef->lfilter, asef->lfilter_dft, CV_DXT_FORWARD, 0);
   cvDFT(asef->rfilter, asef->rfilter_dft, CV_DXT_FORWARD, 0);
 
   cvGetSubRect(asef->lcorr, asef->lroi, asef->lrect);
   cvGetSubRect(asef->rcorr, asef->rroi, asef->rrect);
 
-  asef->lut = cvCreateMat(256, 1, CV_32FC1);
+  
   for (int i = 0; i<256; i++){
     cvmSet(asef->lut, i, 0, 1.0 + i);
   }
   cvLog(asef->lut, asef->lut);
+
+  return 0;
 }
 
 
 void asef_destroy(AsefEyeLocator *asef){
+
+  cvReleaseMemStorage( &asef->face_detection_buffer );
+  cvReleaseHaarClassifierCascade( &asef->face_detection_classifier );
+
   cvReleaseMat(&asef->lfilter);
   cvReleaseMat(&asef->rfilter);
   cvReleaseMat(&asef->lfilter_dft);
   cvReleaseMat(&asef->rfilter_dft);
-  cvReleaseMat(&asef->image);
-  cvReleaseMat(&asef->image_tile);
+  cvReleaseMat(&asef->scaled_face_image_32fc1);
+  cvReleaseMat(&asef->scaled_face_image_8uc1);
   cvReleaseMat(&asef->lcorr);
   cvReleaseMat(&asef->rcorr);
   cvReleaseMat(&asef->lroi);
@@ -56,35 +84,43 @@ void asef_destroy(AsefEyeLocator *asef){
   cvReleaseMat(&asef->lut);
 }
 
-void asef_locate_eyes(AsefEyeLocator *asef, IplImage *image, CvRect face_rect, CvPoint *leye, CvPoint *reye){
-  asef->face_img.cols = face_rect.width;
-  asef->face_img.rows = face_rect.height;
-  asef->face_img.type = CV_8UC1;
-  asef->face_img.step = face_rect.width;
+int asef_detect_face(AsefEyeLocator *asef){
 
-  cvGetSubRect(image, &asef->face_img, face_rect);
+  return fd_detect_face(asef->input_image, asef->face_detection_classifier, 
+    &asef->face_rect, asef->face_detection_buffer);
 
-  double xscale = ((double)asef->image_tile->cols)/((double)asef->face_img.cols);
-  double yscale = ((double)asef->image_tile->rows)/((double)asef->face_img.rows);
+}
 
-  cvResize(&asef->face_img, asef->image_tile, CV_INTER_LINEAR);
 
-  cvLUT(asef->image_tile, asef->image, asef->lut);
+void asef_locate_eyes(AsefEyeLocator *asef){
+  asef->face_image.cols = asef->face_rect.width;
+  asef->face_image.rows = asef->face_rect.height;
+  asef->face_image.type = CV_8UC1;
+  asef->face_image.step = asef->face_rect.width;
 
-  cvDFT(asef->image, asef->image, CV_DXT_FORWARD, 0);
-  cvMulSpectrums(asef->image, asef->lfilter_dft, asef->lcorr, CV_DXT_MUL_CONJ);
-  cvMulSpectrums(asef->image, asef->rfilter_dft, asef->rcorr, CV_DXT_MUL_CONJ);
+  cvGetSubRect(asef->input_image, &asef->face_image, asef->face_rect);
+
+  double xscale = ((double)asef->scaled_face_image_8uc1->cols)/((double)asef->face_image.cols);
+  double yscale = ((double)asef->scaled_face_image_8uc1->rows)/((double)asef->face_image.rows);
+
+  cvResize(&asef->face_image, asef->scaled_face_image_8uc1, CV_INTER_LINEAR);
+
+  cvLUT(asef->scaled_face_image_8uc1, asef->scaled_face_image_32fc1, asef->lut);
+
+  cvDFT(asef->scaled_face_image_32fc1, asef->scaled_face_image_32fc1, CV_DXT_FORWARD, 0);
+  cvMulSpectrums(asef->scaled_face_image_32fc1, asef->lfilter_dft, asef->lcorr, CV_DXT_MUL_CONJ);
+  cvMulSpectrums(asef->scaled_face_image_32fc1, asef->rfilter_dft, asef->rcorr, CV_DXT_MUL_CONJ);
 
   cvDFT(asef->lcorr, asef->lcorr, CV_DXT_INV_SCALE, 0);
   cvDFT(asef->rcorr, asef->rcorr, CV_DXT_INV_SCALE, 0);
 
-  cvMinMaxLoc(asef->lroi, NULL, NULL, NULL, leye, NULL);
-  cvMinMaxLoc(asef->rroi, NULL, NULL, NULL, reye, NULL);
+  cvMinMaxLoc(asef->lroi, NULL, NULL, NULL, &asef->left_eye, NULL);
+  cvMinMaxLoc(asef->rroi, NULL, NULL, NULL, &asef->right_eye, NULL);
 
-  leye->x = (asef->lrect.x + leye->x)/xscale + face_rect.x;
-  leye->y = (asef->lrect.y + leye->y)/yscale + face_rect.y;
-  reye->x = (asef->rrect.x + reye->x)/xscale + face_rect.x;
-  reye->y = (asef->rrect.y + reye->y)/yscale + face_rect.y;
+  asef->left_eye.x = (asef->lrect.x + asef->left_eye.x)/xscale + asef->face_rect.x;
+  asef->left_eye.y = (asef->lrect.y + asef->left_eye.y)/yscale + asef->face_rect.y;
+  asef->right_eye.x = (asef->rrect.x + asef->right_eye.x)/xscale + asef->face_rect.x;
+  asef->right_eye.y = (asef->rrect.y + asef->right_eye.y)/yscale + asef->face_rect.y;
 }
 
 
@@ -145,8 +181,6 @@ unsigned long endianness;
 read_line(fp, buf, LINE_BUF_SIZE);  
 endien_checker = *(uint32_t*)buf;
 
-// printf("%u, %u, %u\n", endien_checker, 0x41424344, 0x44434241);
-
 
 if ( !strcmp(buf, "ABCD") ){
 // Big endian
@@ -198,13 +232,12 @@ if (p_right_filter){
 
 fclose(fp);
 
-return 1;
+return 0;
 
 }
 
 
 int read_line(FILE* fp, char* buf, int size){
-
   int c, i = 0;
   while (i < (size - 1) && (c = fgetc(fp)) != EOF){
     if ( c == '\n' ) {

@@ -4,7 +4,7 @@
 #include <cv.h>
 #include <highgui.h>
 
-
+int parse_arguments( int argc, char** argv, char** face_detector_path, char** eye_locator_path);
 void get_camera_properties(CvCapture * capture, int *frame_width, int *frame_height, double *fps);
 double calculate_fps();
 void draw_markers(CvArr* img, CvRect rect, CvPoint pt1, CvPoint pt2);
