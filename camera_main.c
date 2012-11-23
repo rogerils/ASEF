@@ -67,7 +67,7 @@ int main( int argc, char** argv )
   cvNamedWindow(window_title, 0);
   while (1){
     printf("\r"); fflush(stdout); 
-    printf("FPS: %f", calculate_fps());
+    printf("FPS: %f  ", calculate_fps());
 
     frame = cvQueryFrame(capture);
     cvCopyImage(frame, color_img);
