@@ -1,4 +1,4 @@
-CC = clang
+CC = gcc
 CFLAGS = -Wall -g -pedantic -std=c99 `pkg-config opencv --cflags`
 LDFLAGS = `pkg-config opencv --libs`
 EXEC = camera_main
