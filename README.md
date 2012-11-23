@@ -39,6 +39,7 @@ Android provides face detection function on the video live feeds, but not eye an
 * Having gcc and related command line tools installed.
 * Having OpenCV installed. 
 * You need to check if you have pkg-config setup for opencv by executing "pkg-config opencv --cflags --libs", and make sure that the results make sense. 
+* __Optional but strongly recommended__: Enable the TBB support in OpenCV. The face detection function in OpenCV is multi-threaded with TBB. It will take advantage of your multi-core processor. (Mac homebrew user, install with "brew instal opencv --with-tbb")
 
 ## To compile:
 In a terminal, cd to the source code folder and run:
