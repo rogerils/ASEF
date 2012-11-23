@@ -43,13 +43,18 @@ Android provides face detection function on the video live feeds, but not eye an
 ## To compile:
 In a terminal, cd to the source code folder and run:
 
+```bash
 	make
+```
 
 ## To run 
 
 Make sure you have a webcam attached. In a terminal, cd to the source code folder and run:
 
+```bash
 	./camera_main -f ./data/haarcascade_frontalface_alt2.xml -e ./data/EyeLocatorASEF128x128.fel
+```
+
 
 ## TODOs :
 
