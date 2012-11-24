@@ -2,6 +2,8 @@
 #define _ASEF_H_
 
 #include <cv.h>
+#include <pthread.h>
+#include <semaphore.h>
 
 typedef struct{
 
