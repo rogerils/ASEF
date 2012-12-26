@@ -1,6 +1,6 @@
-CC = gcc
-CFLAGS = -std=c99 `pkg-config opencv --cflags`
-LDFLAGS = `pkg-config opencv --libs` -lm
+CC = gcc 
+CFLAGS = -std=gnu99 `pkg-config opencv --cflags`
+LDFLAGS = `pkg-config opencv --libs` 
 EXEC = camera_main
 OBJS = camera_main.o asef.o fd.o utils.o 
 SRCS = camera_main.c asef.c asef.h fd.c fd.h utils.c utils.h
@@ -8,10 +8,10 @@ SRCS = camera_main.c asef.c asef.h fd.c fd.h utils.c utils.h
 all: $(EXEC)
 
 $(EXEC): $(OBJS)
-	$(CC) $(LDFLAGS) $(OBJS) -o $(EXEC)
+	$(CC) $(OBJS) -o $(EXEC) $(LDFLAGS) 
 
 $(OBJS): $(SRCS)
-	$(CC) $(CFLAGS) -c camera_main.c asef.c fd.c utils.c
+	$(CC) -c camera_main.c asef.c fd.c utils.c $(CFLAGS)
 
 clean:
 	rm -f *~
