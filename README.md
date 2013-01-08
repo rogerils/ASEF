@@ -1,10 +1,10 @@
 # ASEF eye locator
 
-Xiaochao (yxccumt@gmail.com)
+[Xiaochao Yang](www.xiaochaoyang.com)
 
 Rev. 2
 
-Quite a few people are interesed in this project, but unfortunately the code in the repo was just a dump from my experimental test for an academic project. I spent a few days on rewriting it (as a hobby). Please let me know if you have any problem with it. (I tested the code on Mac OS X Moutain Lion, but it should also work on different Linux distros) 
+Quite a few people are interesed in this project, but unfortunately the code in the repo was just a dump from an experimental project for research. I spent a few days rewriting it. Please let me know if you have any problem with it. The code is tested on Mac OS X and Ubuntu, should also work on other Linux distros. 
 
 
 ## About ASEF
@@ -14,7 +14,8 @@ ASEF stands for Average of Synthetic Exact Filters. With trained filters (./data
 
 Here is the video demo of the same code running on an iPhone 4:
 
-[http://www.youtube.com/watch?v=cQA_Do1mZ9E](http://www.youtube.com/watch?v=cQA_Do1mZ9E). (You need to make many changes to have it running on iOS, read the suggestions below)
+[http://www.youtube.com/watch?v=cQA_Do1mZ9E](http://www.youtube.com/watch?v=cQA_Do1mZ9E). 
+(You need to make many changes to have it running on iOS, read the suggestions below)
 
 For those who are only interested in the implementation of ASEF, please look at 
 
@@ -24,7 +25,7 @@ For those who are only interested in the implementation of ASEF, please look at
 
 in asef.c
 
-__Caveat__: ASEF operates on the results of Haar face detection. ASEF is fast, but face detection is slow. Also face detection is not good at handling rotation (both in-plane and out-of-plane), so our ASEF has the same problem. 
+__Caveat__: ASEF operates on the results of Haar face detection. ASEF is fast, but face detection is slow. Also face detection is not good at handling rotation (both in-plane and out-of-plane), so the ASEF has the same problem. 
 
 ## Suggestions to iOS/Mac/Android developers
 
