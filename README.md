@@ -1,6 +1,6 @@
 # ASEF eye locator
 
-[Xiaochao Yang](www.xiaochaoyang.com)
+[Xiaochao Yang](http://www.xiaochaoyang.com)
 
 Rev. 2
 
