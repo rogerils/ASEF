@@ -1,5 +1,5 @@
 CC = gcc 
-CFLAGS = -std=gnu99 `pkg-config opencv --cflags`
+CFLAGS = -g -std=gnu99 `pkg-config opencv --cflags`
 LDFLAGS = `pkg-config opencv --libs` 
 EXEC = camera_main
 OBJS = camera_main.o asef.o fd.o utils.o 

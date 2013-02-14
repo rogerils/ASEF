@@ -39,12 +39,13 @@ int main( int argc, char** argv )
 
 	if (parse_arguments(argc, argv, &haar_cascade_path, &asef_locator_path))
 		return -1;
-
+#if 0
 	struct sigaction act;
 	act.sa_handler = termination_handler; 
 	sigemptyset(&act.sa_mask);
 	act.sa_flags = 0;
 	sigaction(SIGINT, &act, NULL);
+#endif
 
 	int frame_width, frame_height;
 
@@ -82,6 +83,7 @@ int main( int argc, char** argv )
     // Mirroring results. assuming you're using a frontal facing camera
 		cvFlip(color_img, color_img, 1);
 		cvShowImage( window_title, color_img);
+                cvWaitKey(1);
 	} 
 	return 0;
 }

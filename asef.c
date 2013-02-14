@@ -133,7 +133,7 @@ int load_asef_filters(const char* file_name, int *p_n_rows, int *p_n_cols,
 
 	char buf[LINE_BUF_SIZE];
 
-	FILE *fp = fopen(file_name, "r");
+	FILE *fp = fopen(file_name, "rb");
 
 	if (!fp){
 		return -1;
@@ -202,7 +202,10 @@ CvScalar mean, std_dev;
 
 unsigned char* lfilter_data = (unsigned char*)malloc(filter_data_size);
 rv = fread(lfilter_data, 1, filter_data_size, fp);
+
+
 assert(rv == filter_data_size);
+
 
 if (p_left_filter){ 
 
@@ -218,6 +221,7 @@ if (p_left_filter){
 
 unsigned char* rfilter_data = (unsigned char*)malloc(filter_data_size);
 rv = fread(rfilter_data, 1, filter_data_size, fp);
+
 assert(rv == filter_data_size);
 
 if (p_right_filter){
